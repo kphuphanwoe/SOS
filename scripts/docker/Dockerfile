@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 #For OneAPI compilers, the compilers must be added to the builders path
 #FROM intel/oneapi-basekit:devel-ubuntu18.04
@@ -21,7 +21,7 @@ RUN apt-get update -y && apt-get install -y \
   automake                                  \
   libtool                                   \
   flex                                      \
-  python                                    \
+  python3                                   \
   libhwloc-dev
 
 #Packages added on Travis
@@ -31,43 +31,43 @@ RUN apt-get install -y libev-libevent-dev   \
 
 # Build Libevent
 WORKDIR $SOS_INSTALL
-RUN wget -c https://github.com/libevent/libevent/releases/download/release-2.1.10-stable/libevent-2.1.10-stable.tar.gz
-RUN tar -xzvf libevent-2.1.10-stable.tar.gz
-WORKDIR libevent-2.1.10-stable
+RUN wget -c https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz
+RUN tar -xzvf libevent-2.1.12-stable.tar.gz
+WORKDIR libevent-2.1.12-stable
 RUN ./autogen.sh
-RUN ./configure --prefix=$SOS_INSTALL/libevent-2.1.10-stable/install
+RUN ./configure --prefix=$SOS_INSTALL/libevent-2.1.12-stable/install --disable-openssl
 RUN make clean all install
 
 # Build Hydra
 WORKDIR $SOS_INSTALL
-RUN wget -c https://www.mpich.org/static/downloads/4.0/hydra-4.0.tar.gz
-RUN tar -xzvf hydra-4.0.tar.gz
-WORKDIR hydra-4.0
+RUN wget -c https://www.mpich.org/static/downloads/5.0.0/hydra-5.0.0.tar.gz
+RUN tar -xzvf hydra-5.0.0.tar.gz
+WORKDIR hydra-5.0.0
 RUN ./autogen.sh
-RUN ./configure --prefix=$SOS_INSTALL/hydra-4.0/install
+RUN ./configure --prefix=$SOS_INSTALL/hydra-5.0.0/install
 RUN make all install
 
 # Build PMIx
 WORKDIR $SOS_INSTALL
-RUN git clone -b v4.1.1rc6 --depth 10 https://github.com/pmix/pmix pmix
+RUN git clone -b v6.1.0 --depth 10 --recursive https://github.com/openpmix/openpmix pmix
 WORKDIR pmix
 RUN ./autogen.pl
-RUN ./configure --prefix=$SOS_INSTALL/pmix/install --with-libevent=$SOS_INSTALL/libevent-2.1.10-stable/install --without-libev --disable-debug CFLAGS=-O3 --disable-shared --enable-static
+RUN ./configure --prefix=$SOS_INSTALL/pmix/install --with-libevent=$SOS_INSTALL/libevent-2.1.12-stable/install --without-libev --disable-debug CFLAGS=-O3 --disable-shared --enable-static
 RUN make -j
 RUN make install
 
 # Build PRRTE
 WORKDIR $SOS_INSTALL
-RUN git clone -b v2.0.0 --depth 10 https://github.com/pmix/prrte prrte
+RUN git clone -b v4.1.0 --depth 10 --recursive https://github.com/openpmix/prrte prrte
 WORKDIR prrte
 RUN ./autogen.pl
-RUN ./configure --prefix=$SOS_INSTALL/prrte/install --with-pmix=$SOS_INSTALL/pmix/install --without-slurm --with-libevent=$SOS_INSTALL/libevent-2.1.10-stable/install --without-libev --disable-shared --enable-static
+RUN ./configure --prefix=$SOS_INSTALL/prrte/install --with-pmix=$SOS_INSTALL/pmix/install --without-slurm --with-libevent=$SOS_INSTALL/libevent-2.1.12-stable/install --without-libev --disable-shared --enable-static
 RUN make -j
 RUN make install
 
 # Build Libfabric
 WORKDIR $SOS_INSTALL
-RUN git clone -b v1.7.x --depth 10 https://github.com/ofiwg/libfabric.git libfabric
+RUN git clone -b v2.5.0 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
 WORKDIR libfabric
 RUN ./autogen.sh
 # To build basic Libfabric
@@ -78,17 +78,17 @@ RUN make -j
 RUN make install
 
 # Build Portals 4
-WORKDIR $SOS_INSTALL
-RUN git clone --depth 10 https://github.com/regrant/portals4.git portals4
-WORKDIR portals4
-RUN ./autogen.sh
-RUN ./configure --prefix=$SOS_INSTALL/portals4/install --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
-RUN make -j
-RUN make install
+# WORKDIR $SOS_INSTALL
+# RUN git clone --depth 10 https://github.com/regrant/portals4.git portals4
+# WORKDIR portals4
+# RUN ./autogen.sh
+# RUN ./configure --prefix=$SOS_INSTALL/portals4/install --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
+# RUN make -j
+# RUN make install
 
 # Build UCX
 #WORKDIR $SOS_INSTALL
-#RUN git clone -b v1.9.0 --depth 10 https://github.com/openucx/ucx.git
+#RUN git clone -b v1.20.0 --depth 10 https://github.com/openucx/ucx.git
 #WORKDIR ucx
 #RUN ./autogen.sh
 #RUN ./configure --prefix=$SOS_INSTALL/ucx/install --enable-mt --disable-numa --without-java
